@@ -1,5 +1,5 @@
 <template>
-  <div class="login-modal" v-if="loginDialogFormVisible">
+  <div class="login-modal" v-if="loginDialogFormVisible" v-loading.fullscreen="loading" element-loading-background="rgba(0, 0, 0, 0.8)">
     <div class="login-box">
       <i class="el-icon-close" @click="hideDialog"></i>
       <p>{{type === 'login' ? '登录' : '注册'}}</p>
@@ -50,7 +50,8 @@ export default {
       username: '',
       password: '',
       rePass: '',
-      type: 'login'
+      type: 'login',
+      loading: false
     }
   },
   methods: {
@@ -66,6 +67,7 @@ export default {
         });
         return;
       }
+      this.loading = true;
       let data = {username: this.username, password: this.password};
       let url = this.baseUrl + '/user/login';
       fetch(url, {
@@ -77,6 +79,7 @@ export default {
       })
       .then(res => res.json())
       .then(res => {
+        this.loading = false;
         if (res.code == 0) {
           // 登录成功,隐藏登录框，返回首页中
           this.$message({
@@ -88,6 +91,13 @@ export default {
           this.hideDialog();
           this.$emit('successCallback', this.username);
         }
+      }).catch(err => {
+        this.loading = false;
+        this.$message({
+          showClose: true,
+          message: '登录失败',
+          type: 'error'
+        });
       })
     },
     register() {
@@ -107,6 +117,7 @@ export default {
         });
         return;
       }
+      this.loading = true;
       let data = {username: this.username, password: this.password};
       let url = this.baseUrl + '/user/register';
       fetch(url, {
@@ -118,6 +129,7 @@ export default {
       })
       .then(res => res.json())
       .then(res => {
+        this.loading = false;
         if (res.code == 0) {
           // 登录成功,隐藏登录框，返回首页中
           this.$message({

@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page" v-loading.fullscreen="loading" element-loading-background="rgba(0, 0, 0, 0.8)">
     <header>
       <h3><i class="el-icon-mic"></i>智能音乐平台</h3>
       <el-button type="primary" size=mini v-if="!username" @click="showLoginDialog">登录</el-button>
@@ -9,10 +9,19 @@
         </span>
         <el-dropdown-menu slot="dropdown">
           <el-dropdown-item command="a">我的收藏</el-dropdown-item>
-          <el-dropdown-item command="b">退出</el-dropdown-item>
+          <el-dropdown-item command="b">后台管理</el-dropdown-item>
+          <el-dropdown-item command="c">退出</el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
     </header>
+    <div class="body">
+      <div class="search-box">
+        <el-input placeholder="请输入音乐专辑或者歌手" v-model="searchContent" class="input-with-select">
+          <el-button slot="append" type="primary" icon="el-icon-search"></el-button>
+        </el-input>
+      </div>
+      
+    </div>
     <LoginDialog :loginDialogFormVisible="loginDialogFormVisible" @hideDialog="hideDialog" @successCallback="successCallback"></LoginDialog>
   </div>
 </template>
@@ -20,14 +29,16 @@
 <script>
 import LoginDialog from './login';
 export default {
-  name: 'HelloWorld',
+  name: 'Index',
   components: {
     LoginDialog
   },
   data () {
     return {
       username: '',
-      loginDialogFormVisible: false
+      loginDialogFormVisible: false,
+      loading: false,
+      searchContent: ''
     }
   },
   beforeMount() {
@@ -54,8 +65,15 @@ export default {
     handleCommand(command) {
       switch(command){
         case 'a': break;
-        case 'b': this.loginOut();break;
+        case 'b': 
+          
+          break;
+        case 'c': this.loginOut();break;
+        default: break;
       }
+    },
+    loadingSwitch(flag) {
+      this.loading = flag;
     }
   }
 }
@@ -83,6 +101,12 @@ export default {
       flex: 1;
     }
     
+  }
+  .body {
+    .search-box {
+      width: 400px;
+      margin: 40px auto;
+    }
   }
 }
 
