@@ -88,6 +88,7 @@ export default {
             type: 'success'
           });
           sessionStorage.setItem('username', this.username);
+          sessionStorage.setItem('userId', res.userId);
           this.hideDialog();
           this.$emit('successCallback', this.username);
         }
@@ -138,6 +139,7 @@ export default {
             type: 'success'
           });
           sessionStorage.setItem('username', this.username);
+          sessionStorage.setItem('userId', res.userId);
           this.hideDialog();
           this.$emit('successCallback', this.username);
         }
