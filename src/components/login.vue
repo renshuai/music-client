@@ -91,6 +91,12 @@ export default {
           sessionStorage.setItem('userId', res.userId);
           this.hideDialog();
           this.$emit('successCallback', this.username);
+        } else {
+          this.$message({
+            showClose: true,
+            message: res.msg,
+            type: 'error'
+          });
         }
       }).catch(err => {
         this.loading = false;
@@ -157,6 +163,7 @@ export default {
     top: 0;
     right: 0;
     bottom: 0;
+    z-index: 9999;
 
     .login-box {
       width: 400px;

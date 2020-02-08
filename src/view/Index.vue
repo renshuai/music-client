@@ -15,11 +15,14 @@
       </el-dropdown>
     </header>
     <div class="body">
-      <div class="search-box">
-        <el-input placeholder="请输入音乐专辑或者歌手" v-model="searchContent" class="input-with-select">
-          <el-button slot="append" type="primary" icon="el-icon-search" @click="search"></el-button>
-        </el-input>
+      <div class="search-box-wrap" :class="{'search-show-result': showAlbumsResults}">
+        <div class="search-box">
+          <el-input placeholder="请输入音乐专辑或者歌手,为空时则检索所有专辑和歌手" v-model="searchContent" class="input-with-select">
+            <el-button slot="append" type="primary" icon="el-icon-search" @click="search"></el-button>
+          </el-input>
+        </div>
       </div>
+      
       <div class="table-wrap" v-if="showAlbumsResults">
         <p>专辑列表</p>
         <el-table
@@ -58,7 +61,7 @@
             label="操作"
             width="100">
             <template slot-scope="scope">
-              <el-button @click="collect(scope.row)" type="text" size="small">收藏</el-button>
+              <el-button @click="collect(scope.row)" type="text" size="small">{{scope.row.handle}}</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -89,7 +92,7 @@
 </template>
 
 <script>
-import LoginDialog from './login';
+import LoginDialog from '../components/login';
 export default {
   name: 'Index',
   components: {
@@ -128,6 +131,7 @@ export default {
     loginOut() {
       this.username = '';
       sessionStorage.removeItem('username');
+      sessionStorage.removeItem('userId');
     },
     handleCommand(command) {
       switch(command){
@@ -155,7 +159,10 @@ export default {
         url = '/albums/getAlbumsByName?name=' + this.searchContent
       }
       fetch(this.baseUrl + url).then(response => response.json()).then(response => {
-          this.albums = response;
+          this.albums = response.map(album => {
+            album.handle = '收藏';
+            return album;
+          })
           this.showAlbumsResults = true;
       })
     },
@@ -174,10 +181,19 @@ export default {
     },
     collect(data) {
       let userId = sessionStorage.getItem('userId');
-      let url = `${this.baseUrl}/users/collect`;
+      if (!userId) {
+        this.$message({
+          showClose: true,
+          message: '请先登录',
+          type: 'error'
+        });
+        return;
+      }
+      let url = `${this.baseUrl}/user/collect`;
       let params = {
-        albumsId: data['_id'],
-        userId: userId
+        albumId: data['_id'],
+        userId: userId,
+        type: (data.handle === '收藏' ? 0 : 1)  // 0 收藏，1取消收藏
       }
       fetch(url, {
         method: 'POST',
@@ -191,8 +207,15 @@ export default {
         if (res.code == 0) {
           this.$message({
             showClose: true,
-            message: '收藏成功',
+            message: res.msg,
             type: 'success'
+          });
+          data.handle = (data.handle === '收藏' ? '取消收藏' : '收藏');
+        } else {
+          this.$message({
+            showClose: true,
+            message: res.msg,
+            type: 'error'
           });
         }
       })
@@ -204,16 +227,20 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 .page {
+  height: 100%;
+  overflow: auto;
   header {
     display: flex;
     align-items: center;
-    height: 40px;
+    height: 50px;
     border-bottom: 1px solid #ddd;
     padding: 0 20px;
+    background-color: #409EFF;
+    color: #fff;
 
     .el-dropdown-link {
       cursor: pointer;
-      color: #409EFF;
+      color: #fff;
     }
     .el-icon-arrow-down {
       font-size: 12px;
@@ -221,14 +248,58 @@ export default {
 
     & > h3 {
       flex: 1;
+      margin: 0;
+      padding: 0;
+      .el-icon-mic {
+        margin-right: 5px;
+        font-size: 22px;
+      }
     }
+    
     
   }
   .body {
-    .search-box {
-      width: 400px;
-      margin: 40px auto;
+    height: calc(100% - 51px);
+    overflow: auto;
+    .search-box-wrap {
+      position: relative;
+      height: 100%;
+      transition: height linear .5s;
+
+      &.search-show-result {
+        height: 150px;
+
+        .search-box {
+          top: 50%;
+        }
+      }
+
+
+      .search-box {
+        width: 700px;
+        position: absolute;
+        left: 50%;
+        top: 40%;
+        transform: translate(-50%, -50%);
+        transition: top linear 0.3s;
+
+        /deep/ .el-input__inner {
+          border: 1px solid #409EFF;
+          height: 60px;
+          line-height: 60px;
+          font-size: 16px;
+        }
+
+        /deep/ .el-input-group__append {
+          border: 1px solid #409EFF;
+          border-left: 0;
+          background-color: #409EFF;
+          color: #fff;
+          font-size: 20px;
+        }
+      }
     }
+    
     .table-wrap {
       padding: 0 30px;
       margin-bottom: 30px;
@@ -249,6 +320,7 @@ export default {
         border-bottom: 2px solid #666;
         padding-bottom: 15px;
         font-weight: 700;
+        margin: 0;
       }
 
       & > span {
