@@ -8,8 +8,6 @@
           {{username}}<i class="el-icon-arrow-down el-icon--right"></i>
         </span>
         <el-dropdown-menu slot="dropdown">
-          <el-dropdown-item command="a">我的收藏</el-dropdown-item>
-          <!-- <el-dropdown-item command="b">后台管理</el-dropdown-item> -->
           <el-dropdown-item command="c">退出</el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
@@ -100,7 +98,7 @@ export default {
   },
   data () {
     return {
-      baseUrl: 'http://localhost:3000',
+      baseUrl: 'http://106.13.136.196:3000',
       username: '',
       loginDialogFormVisible: false,
       loading: false,
@@ -116,6 +114,8 @@ export default {
     let username = sessionStorage.getItem('username');
     if (username) {
       this.username = username;
+    } else {
+      this.showLoginDialog();
     }
   },
   methods: {
@@ -132,13 +132,10 @@ export default {
       this.username = '';
       sessionStorage.removeItem('username');
       sessionStorage.removeItem('userId');
+      this.showLoginDialog();
     },
     handleCommand(command) {
       switch(command){
-        case 'a': break;
-        case 'b': 
-          
-          break;
         case 'c': this.loginOut();break;
         default: break;
       }
@@ -147,20 +144,26 @@ export default {
       this.loading = flag;
     },
     search() {
-      this.searchAlbums();
-      this.searchSingers();
+      let username = sessionStorage.getItem('username');
+      if (username) {
+        this.searchAlbums();
+        this.searchSingers();
+      } else {
+        this.showLoginDialog();
+      }
     },
     searchAlbums() {
+      let userId = sessionStorage.getItem('userId');
       let url = '';
       if (!this.searchContent) {
-        url = '/albums/';
+        url = '/albums/?userId=' + userId;
         
       } else {
-        url = '/albums/getAlbumsByName?name=' + this.searchContent
+        url = '/albums/getAlbumsByName?name=' + this.searchContent + '&userId=' + userId
       }
       fetch(this.baseUrl + url).then(response => response.json()).then(response => {
           this.albums = response.map(album => {
-            album.handle = '收藏';
+            album.handle = album.isCollected ? '取消收藏' : '收藏';
             return album;
           })
           this.showAlbumsResults = true;

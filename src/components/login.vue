@@ -1,5 +1,5 @@
 <template>
-  <div class="login-modal" v-if="loginDialogFormVisible" v-loading.fullscreen="loading" element-loading-background="rgba(0, 0, 0, 0.8)">
+  <div class="login-modal" v-if="loginDialogFormVisible" v-loading.fullscreen="loading" element-loading-background="rgba(255, 255, 255, 0.8)">
     <div class="login-box">
       <i class="el-icon-close" @click="hideDialog"></i>
       <p>{{type === 'login' ? '登录' : '注册'}}</p>
@@ -46,7 +46,7 @@ export default {
   props: ['loginDialogFormVisible'],
   data () {
     return {
-      baseUrl: 'http://localhost:3000',
+      baseUrl: 'http://106.13.136.196:3000',
       username: '',
       password: '',
       rePass: '',

@@ -1,5 +1,5 @@
 <template>
-  <div class="page" v-loading.fullscreen="loading" element-loading-background="rgba(0, 0, 0, 0.8)">
+  <div class="page" v-loading.fullscreen="loading" element-loading-background="rgba(255, 255, 255, 0.8)">
     <header>
       <h3><i class="el-icon-mic"></i>智能音乐平台后台管理系统</h3>
     </header>
@@ -97,20 +97,23 @@
         <span v-else>未检索到相应信息</span>
       </div>
     </div>
-    <AlbumDialog :type="albumType" :album="currentAlbum" v-if="showAlbumDialog" @hideDialog="hideDialog" @confirmAlbumDialog="confirmAlbumDialog"></AlbumDialog>
+    <AlbumDialog :baseUrl="baseUrl" :type="albumType" :album="currentAlbum" v-if="showAlbumDialog" @hideDialog="hideDialog" @confirmAlbumDialog="confirmAlbumDialog"></AlbumDialog>
+    <SingerDialog :type="singerType" :singer="currentSinger" v-if="showSingerDialog" @hideDialog="hideDialog" @confirmSingerDialog="confirmSingerDialog"></SingerDialog>
   </div>
 </template>
 
 <script>
 import AlbumDialog from '../components/addAlbumDialog';
+import SingerDialog from '../components/addSingerDialog';
 export default {
   name: 'Index',
   components: {
-    AlbumDialog
+    AlbumDialog,
+    SingerDialog
   },
   data () {
     return {
-      baseUrl: 'http://localhost:3000',
+      baseUrl: 'http://106.13.136.196:3000',
       username: '',
       loginDialogFormVisible: false,
       loading: false,
@@ -121,7 +124,10 @@ export default {
       showAlbumsResults: false,
       albumType: 'add',
       showAlbumDialog: false,
-      currentAlbum: null
+      currentAlbum: null,
+      singerType: 'add',
+      showSingerDialog: false,
+      currentSinger: null
     }
   },
   beforeMount() {
@@ -136,14 +142,16 @@ export default {
       if (type === 'album') {
         this.showAlbumDialog = false;
       } else if (type === 'singer') {
+        this.showSingerDialog = false;
       }
     },
     confirmAlbumDialog(album) {
+      this.loadingSwitch(true);
       let url = '';
       if (this.albumType === 'add') {
         url = this.baseUrl + '/albums/add';
       } else {
-        url = tihs.baseUrl + '/albums/update'
+        url = this.baseUrl + '/albums/update'
       }
       fetch(url, {
         method: 'POST',
@@ -152,14 +160,59 @@ export default {
         },
         body: JSON.stringify(album), // "{"name":"Billy","age":18}"
       }).then(response => response.json()).then(response => {
-          if (response.code == 0) {
-            if (this.albumType === 'add') {
-              this.albums.push(response.album);
-            } else {
-              
-            }
+        this.loadingSwitch(false);
+        if (response.code == 0) {
+          if (this.albumType === 'add') {
+            this.albums.push(response.album);
+            this.$message({
+              showClose: true,
+              message: response.msg,
+              type: 'success'
+            });
+          } else {
+            this.$message({
+              showClose: true,
+              message: response.msg,
+              type: 'success'
+            });
           }
+        }
         this.hideDialog('album');
+      })
+    },
+    confirmSingerDialog(singer) {
+      this.loadingSwitch(true);
+      let url = '';
+      if (this.singerType === 'add') {
+        url = this.baseUrl + '/singers/add';
+      } else {
+        url = this.baseUrl + '/singers/update'
+      }
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(singer), // "{"name":"Billy","age":18}"
+      }).then(response => response.json()).then(response => {
+        this.loadingSwitch(false);
+        if (response.code == 0) {
+          if (this.singerType === 'add') {
+            this.singers.push(response.singer);
+            this.$message({
+              showClose: true,
+              message: response.msg,
+              type: 'success'
+            });
+          } else {
+            this.$message({
+              showClose: true,
+              message: response.msg,
+              type: 'success'
+            });
+          }
+        }
+        this.hideDialog('singer');
       })
     },
     loadingSwitch(flag) {
@@ -170,6 +223,7 @@ export default {
       this.searchSingers();
     },
     searchAlbums() {
+      this.loadingSwitch(true);
       let url = '';
       if (!this.searchContent) {
         url = '/albums/';
@@ -178,6 +232,7 @@ export default {
         url = '/albums/getAlbumsByName?name=' + this.searchContent
       }
       fetch(this.baseUrl + url).then(response => response.json()).then(response => {
+        this.loadingSwitch(false);
           this.albums = response.map(album => {
             album.handle = '收藏';
             return album;
@@ -186,6 +241,7 @@ export default {
       })
     },
     searchSingers() {
+      this.loadingSwitch(true);
       let url = '';
       if (!this.searchContent) {
         url = '/singers/';
@@ -194,6 +250,7 @@ export default {
         url = '/singers/getSingersByName?name=' + this.searchContent
       }
       fetch(this.baseUrl + url).then(response => response.json()).then(response => {
+        this.loadingSwitch(false);
           this.singers = response;
           this.showSingersResults = true;
       })
@@ -203,7 +260,37 @@ export default {
       this.showAlbumDialog = true;
     },
     initAlbumsDataBtnClick() {
-
+      this.$confirm('确定要初始化专辑数据吗', '专辑数据初始化', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消'
+      }).then(() => {
+        this.loadingSwitch(true);
+        let url = `${this.baseUrl}/albums/init`;
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }).then(response => response.json()).then(response => {
+          this.loadingSwitch(false);
+            if (response.code == 0) {
+              this.albums = response.albums;
+              this.$message({
+                showClose: true,
+                message: response.msg,
+                type: 'success'
+              });
+            } else {
+              this.$message({
+                showClose: true,
+                message: response.msg,
+                type: 'error'
+              });
+            }
+        })
+      }).catch(() => {
+        console.log('init cancel');
+      })
     },
     updateAlbumBtnClick(data) {
       this.currentAlbum = data;
@@ -211,19 +298,130 @@ export default {
       this.showAlbumDialog = true;
     },
     removeAlbumBtnClick(data) {
+      this.$confirm('确定要删除该专辑吗', '专辑删除', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消'
+      }).then(() => {
+        this.loadingSwitch(true);
+          let options = {
+              method: 'DELETE',//post请求
+              headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json'
+              }
+          }
+          fetch(`${this.baseUrl}/albums/${data._id}`, options).then(res => {
+              return res.json();
+          }).then(json => {
+            this.loadingSwitch(false);
+            if (json.code == 0) {
+              let index=this.albums.findIndex(item=>item._id==data._id);
+              this.albums.splice(index, 1);
+              this.$message({
+                showClose: true,
+                message: json.msg,
+                type: 'success'
+              });
+            } else {
+              this.$message({
+                showClose: true,
+                message: json.msg,
+                type: 'error'
+              });
+            }
+              
+          }).catch(err => {
+              alert(err);
+          })
+      }).catch(() => {
+        this.loadingSwitch(false);
+          console.log('已取消删除');
+      });
 
     },
     addSingerBtnClick() {
-
+      this.singerType = 'add';
+      this.showSingerDialog = true;
     },
     initSingersDataBtnClick() {
-
+      this.$confirm('确定要初始化歌手数据吗', '歌手数据初始化', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消'
+      }).then(() => {
+        this.loadingSwitch(true);
+        let url = `${this.baseUrl}/singers/init`;
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }).then(response => response.json()).then(response => {
+          this.loadingSwitch(false);
+            if (response.code == 0) {
+              this.singers = response.singers;
+              this.$message({
+                showClose: true,
+                message: response.msg,
+                type: 'success'
+              });
+            } else {
+              this.$message({
+                showClose: true,
+                message: response.msg,
+                type: 'error'
+              });
+            }
+        })
+      }).catch(() => {
+        this.loadingSwitch(false);
+        console.log('init cancel');
+      })
     },
     updateSingerBtnClick(data) {
-
+      this.currentSinger = data;
+      this.singerType = 'update';
+      this.showSingerDialog = true;
     },
     removeSingerBtnClick(data) {
-
+      this.$confirm('确定要删除该歌手吗', '歌手删除', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消'
+      }).then(() => {
+        this.loadingSwitch(true);
+          let options = {
+              method: 'DELETE',//post请求
+              headers: {
+                  'Accept': 'application/json',
+                  'Content-Type': 'application/json'
+              }
+          }
+          fetch(`${this.baseUrl}/singers/${data._id}`, options).then(res => {
+              return res.json();
+          }).then(json => {
+            this.loadingSwitch(false);
+            if (json.code == 0) {
+              let index=this.singers.findIndex(item=>item._id==data._id);
+              this.singers.splice(index, 1);
+              this.$message({
+                showClose: true,
+                message: json.msg,
+                type: 'success'
+              });
+            } else {
+              this.$message({
+                showClose: true,
+                message: json.msg,
+                type: 'error'
+              });
+            }
+              
+          }).catch(err => {
+              alert(err);
+          })
+      }).catch(() => {
+        this.loadingSwitch(false);
+          console.log('已取消删除');
+      });
     }
   }
 }

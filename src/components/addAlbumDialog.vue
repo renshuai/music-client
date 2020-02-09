@@ -1,6 +1,11 @@
 <template>
     <el-dialog :title="title" :visible="true" :before-close="hideDialog">
         <div v-if="currentAlbum" class="detail-block">
+            <div class="detail-property-block upload-block" v-if="type === 'add'">
+                <span>封面</span>
+                <input type="file"  class="fileInput" ref="fileInput" accept="image/*"/>
+                <el-button type="primary" size="mini" @click="upload">上传</el-button>
+            </div>
             <div class="detail-property-block">
                 <span>专辑ID</span>
                 <el-input v-model="currentAlbum['album_id']" placeholder="请输入专辑ID"></el-input>
@@ -35,7 +40,7 @@
 <script>
 export default {
     name: 'Index',
-    props: ['type', 'album'],
+    props: ['type', 'album', 'baseUrl'],
     data () {
         return {
             currentAlbum: null
@@ -44,6 +49,7 @@ export default {
     beforeMount() {
         if (this.type === 'add') {
             this.currentAlbum = {
+                cover: '',
                 album_id: '',
                 album_name: '',
                 price: '',
@@ -63,7 +69,35 @@ export default {
             this.$emit('hideDialog', 'album');
         },
         confirmDialog() {
+            if (this.type === 'add' && !this.currentAlbum.cover) {
+                this.$message({
+                    showClose: true,
+                    message: '请上传文件',
+                    type: 'error'
+                });
+                return;
+            }
             this.$emit('confirmAlbumDialog', this.currentAlbum);
+        },
+        upload() {
+            let uploadInput = this.$refs.fileInput;
+            const formData = new FormData()
+            formData.append('cover', uploadInput.files[0])
+            let url = `${this.baseUrl}/albums/uploads`;
+            fetch(url,{
+                method: 'POST',
+                body: formData, // "{"name":"Billy","age":18}"
+            }).then(response => response.text()).then((response) => {
+                console.log(response);
+                if (response) {
+                    this.currentAlbum.cover = response.toString();
+                    this.$message({
+                        showClose: true,
+                        message: '上传成功',
+                        type: 'success'
+                    });
+                }
+            })
         }
     }
 }
@@ -76,6 +110,14 @@ export default {
             align-items: center;
             justify-content: center;
             margin-bottom: 10px;
+
+            &.upload-block {
+                & > input {
+                    border: 1px solid #DCDFE6;
+                    flex: 1;
+                    margin-right: 10px;
+                }
+            }
         }
 
         .detail-property-block > span {
